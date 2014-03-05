@@ -5,7 +5,7 @@ This is a wrapper for the [BoardGameGeek JSON API](http://boardgamegeek.com/wiki
 
 This code is running live at [bgg-json.azurewebsites.net](http://bgg-json.azurewebsites.net/). See this forum post for more information and for any questions: <http://boardgamegeek.com/thread/1109812/jsonjsonp-wrapper>.
 
-LICENSE
+License
 ========
 
 The MIT License (MIT)
