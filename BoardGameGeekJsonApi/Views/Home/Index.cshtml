@@ -1,0 +1,136 @@
+﻿@{
+    Layout = null;
+    var baseUrl = ViewBag.BaseUrl;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>BoardGameGeek JSON APIs</title>
+    <script type="text/javascript">
+        window.analytics || (window.analytics = []), window.analytics.methods = ["identify", "track", "trackLink", "trackForm", "trackClick", "trackSubmit", "page", "pageview", "ab", "alias", "ready", "group", "on", "once", "off"], window.analytics.factory = function (t) { return function () { var a = Array.prototype.slice.call(arguments); return a.unshift(t), window.analytics.push(a), window.analytics } }; for (var i = 0; i < window.analytics.methods.length; i++) { var method = window.analytics.methods[i]; window.analytics[method] = window.analytics.factory(method) } window.analytics.load = function (t) { var a = document.createElement("script"); a.type = "text/javascript", a.async = !0, a.src = ("https:" === document.location.protocol ? "https://" : "http://") + "d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/" + t + "/analytics.min.js"; var n = document.getElementsByTagName("script")[0]; n.parentNode.insertBefore(a, n) }, window.analytics.SNIPPET_VERSION = "2.0.8",
+        window.analytics.load("31hbmwktam");
+        window.analytics.page();
+    </script>
+    @Styles.Render("~/Content/css")
+    <style>
+        body {
+            padding-top: 0;
+        }
+
+        h1 {
+            font-size: 26px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        code {
+            color: #000;
+            background-color: #eee;
+        }
+
+        td.description {
+            padding-left: 0;
+            padding-right: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container body-content">
+        <h1>BoardGameGeek JSON APIs</h1>
+
+        <p>This server wraps some of the APIs from <a href="http://boardgamegeek.com/">BoardGameGeek</a> as JSON endpoints.  All endpoints support simple HTTP request, <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>, and <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a>. To make a JSONP request, include a <code>callback</code> parameter in the querystring of your request.</p>
+        <p><b>Use of these APIs is subject to the BoardGameGeek API <a href="http://boardgamegeek.com/xmlapi/termsofuse">terms of use</a>.</b></p>
+        <p>In addition, this server will only remain available as long as it is not abused. So don't hammer it with requests I will have to take it down. If you have some high volume use case, <a href="mailto:erv@ewal.net">email me</a> and I'll share the source code for this site with you so that you can host it yourself.</p>
+
+        <h2>Game Collections</h2>
+        <p><b><i>URL Format:</i></b> <code>@(baseUrl)collection/<b>{username}</b>?grouped=<b>true</b>|<b>false</b></code></p>
+        <p>This endpoint returns a user's game collection.  There are two modes.  The first mode, <code>grouped=false</code> (this is the default), just returns a flat list of the games in the collection.  The second mode, <code>grouped=true</code> returns the collection with any game expansions nested underneath their parent game.</p>
+        <p>
+            <b>Examples:</b>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="description">Flat List:</td>
+                        <td><a href="/collection/edwalter">@(baseUrl)collection/<b>edwalter</b></a></td>
+                    </tr>
+                    <tr>
+                        <td class="description">Flat List (JSONP):</td>
+                        <td><a href="/collection/edwalter?callback=myCallback">@(baseUrl)collection/<b>edwalter</b>?callback=<b>myCallback</b></a></td>
+                    </tr>
+                    <tr>
+                        <td class="description">Grouped List:</td>
+                        <td><a href="/collection/edwalter?grouped=true">@(baseUrl)collection/<b>edwalter</b>?grouped=<b>true</b></a></td>
+                    </tr>
+                    <tr>
+                        <td class="description">Grouped List (JSONP):</td>
+                        <td><a href="/collection/edwalter?grouped=true&callback=myCallback">@(baseUrl)collection/<b>edwalter</b>?grouped=<b>true</b>&callback=<b>myCallback</b></a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </p>
+
+        <h2>Recent Plays</h2>
+        <p><b><i>URL Format:</i></b> <code>@(baseUrl)plays/<b>{username}</b></code></p>
+        <p>This endpoint returns a user's recent logged plays.</p>
+        <p>
+            <b>Examples:</b>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="description">Recent Plays:</td>
+                        <td><a href="/plays/edwalter">@(baseUrl)plays/<b>edwalter</b></a></td>
+                    </tr>
+                    <tr>
+                        <td class="description">Recent Plays (JSONP):</td>
+                        <td><a href="/plays/edwalter?callback=myCallback">@(baseUrl)plays/<b>edwalter</b>?callback=<b>myCallback</b></a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </p>
+
+        <h2>Things</h2>
+        <p><b><i>URL Format:</i></b> <code>@(baseUrl)thing/<b>{id}</b></code></p>
+        <p>This endpoint returns the details for an individual entry in the BGG database (e.g. a particular board game).</p>
+        <p>
+            <b>Examples:</b>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="description">Agricola Details:</td>
+                        <td><a href="/thing/31260">@(baseUrl)thing/<b>31260</b></a></td>
+                    </tr>
+                    <tr>
+                        <td class="description">Agricola Details (JSONP):</td>
+                        <td><a href="/thing/31260?callback=myCallback">@(baseUrl)thing/<b>31260</b>?callback=<b>myCallback</b></a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </p>
+
+        <h2>The Hotness</h2>
+        <p><b><i>URL Format:</i></b> <code>@(baseUrl)hot</code></p>
+        <p>This endpoint returns the list of hot games from BGG.</p>
+        <p>
+            <b>Examples:</b>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="description">The Hotness:</td>
+                        <td><a href="/hot">@(baseUrl)hot</a></td>
+                    </tr>
+                    <tr>
+                        <td class="description">The Hotness (JSONP):</td>
+                        <td><a href="/hot?callback=myCallback">@(baseUrl)hot?callback=<b>myCallback</b></a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </p>
+    </div>
+</body>
+</html>
