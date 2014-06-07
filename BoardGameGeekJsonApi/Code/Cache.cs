@@ -30,6 +30,10 @@ namespace BoardGameGeekJsonApi
             return "longthing:" + id.ToString();
         }
 
+        public static string ChallengeKey(int id)
+        {
+            return "challenge:" + id.ToString();
+        }
 
     }
 }

@@ -142,6 +142,7 @@
     <Compile Include="Code\BoardGameGeekClient.cs" />
     <Compile Include="Code\Cache.cs" />
     <Compile Include="Code\Models.cs" />
+    <Compile Include="Controllers\ChallengeController.cs" />
     <Compile Include="Controllers\HotController.cs" />
     <Compile Include="Controllers\PlaysController.cs" />
     <Compile Include="Controllers\CollectionController.cs" />

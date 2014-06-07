@@ -21,7 +21,8 @@ namespace BoardGameGeekJsonApi
 {
     public class BoardGameGeekClient
     {
-        public const string BASE_URL = "http://www.boardgamegeek.com/xmlapi2";
+        public const string BASE_URL1 = "http://www.boardgamegeek.com/xmlapi";
+        public const string BASE_URL2 = "http://www.boardgamegeek.com/xmlapi2";
         private static MemoryCache _gameCache = MemoryCache.Default;
         private const int GameCacheDuration = 43200; // 12 hours
 
@@ -40,7 +41,7 @@ namespace BoardGameGeekJsonApi
             try
             {
 
-                Uri teamDataURI = new Uri(string.Format(BASE_URL + "/collection?username={0}&stats=1&{1}",
+                Uri teamDataURI = new Uri(string.Format(BASE_URL2 + "/collection?username={0}&stats=1&{1}",
                     Username,
                     GetExpansions ? "subtype=boardgameexpansion" : "excludesubtype=boardgameexpansion"));
 
@@ -88,19 +89,19 @@ namespace BoardGameGeekJsonApi
         {
             try
             {
-                Uri teamDataURI = new Uri(BASE_URL + "/hot?thing=boardgame");
+                Uri teamDataURI = new Uri(BASE_URL2 + "/hot?thing=boardgame");
                 XDocument xDoc = await ReadData(teamDataURI);
 
                 // LINQ to XML.
                 IEnumerable<HotGame> games = from Boardgame in xDoc.Descendants("item")
-                                                          select new HotGame
-                                                          {
-                                                              Name = Boardgame.Element("name").Attribute("value").Value,
-                                                              YearPublished = Boardgame.Element("yearpublished") != null ? int.Parse(Boardgame.Element("yearpublished").Attribute("value").Value) : 0,
-                                                              Thumbnail = Boardgame.Element("thumbnail").Attribute("value").Value,
-                                                              GameId = int.Parse(Boardgame.Attribute("id").Value),
-                                                              Rank = int.Parse(Boardgame.Attribute("rank").Value)
-                                                          };
+                                             select new HotGame
+                                             {
+                                                 Name = Boardgame.Element("name").Attribute("value").Value,
+                                                 YearPublished = Boardgame.Element("yearpublished") != null ? int.Parse(Boardgame.Element("yearpublished").Attribute("value").Value) : 0,
+                                                 Thumbnail = Boardgame.Element("thumbnail").Attribute("value").Value,
+                                                 GameId = int.Parse(Boardgame.Attribute("id").Value),
+                                                 Rank = int.Parse(Boardgame.Attribute("rank").Value)
+                                             };
 
                 return games;
 
@@ -112,11 +113,53 @@ namespace BoardGameGeekJsonApi
             }
         }
 
-        public async Task<IEnumerable<PlayItem>> LoadLastPlays(string Username)
+        public async Task<GeekList> LoadGeekList(int id)
         {
             try
             {
-                Uri teamDataURI = new Uri(string.Format(BASE_URL + "/plays?username={0}&subtype=boardgame&excludesubtype=videogame", Username));
+                Uri geekListURI = new Uri(string.Format(BASE_URL1 + "/geeklist/{0}", id));
+                XDocument doc = await ReadData(geekListURI);
+
+                var gl = doc.Root;
+                return new GeekList()
+                {
+                    GeekListId = id,
+                    Username = gl.Element("username").Value,
+                    Title=gl.Element("title").Value,
+                    Description = gl.Element("description").Value,
+                    Items = (from item in gl.Elements("item")
+                             where item.Attribute("objecttype").Value == "thing" && item.Attribute("subtype").Value == "boardgame"
+                             select new GeekListItem()
+                             {
+                                 GameId = int.Parse(item.Attribute("objectid").Value),
+                                 ImageId = item.Attribute("imageid") != null ? int.Parse(item.Attribute("imageid").Value) : (int?) null,
+                                 Username = item.Attribute("username").Value,
+                                 Name = item.Attribute("objectname").Value,
+                                 Description = item.Element("body").Value,
+                             }).ToList()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new GeekList();
+            }
+        }
+
+        public async Task<Plays> LoadPlays(string username, int page = 1, DateTime? minDate = null, DateTime? maxDate = null)
+        {
+            try
+            {
+                string url = string.Format(BASE_URL2 + "/plays?username={0}&subtype=boardgame&excludesubtype=videogame&page={1}", username, page);
+                if (minDate != null)
+                {
+                    url += "&mindate=" + minDate.Value.ToString("yyyy-MM-dd");
+                }
+                if (maxDate != null)
+                {
+                    url += "&maxdate=" + maxDate.Value.ToString("yyyy-MM-dd");
+                }
+                Uri teamDataURI = new Uri(url);
                 XDocument xDoc = await ReadData(teamDataURI);
 
                 // LINQ to XML.
@@ -126,14 +169,17 @@ namespace BoardGameGeekJsonApi
                                                            Name = Boardgame.Element("item").Attribute("name").Value,
                                                            NumPlays = int.Parse(Boardgame.Attribute("quantity").Value),
                                                            GameId = int.Parse(Boardgame.Element("item").Attribute("objectid").Value),
-                                                           PlayDate = safeParseDateTime(Boardgame.Attribute("date").Value)
+                                                           PlayDate = safeParseDateTime(Boardgame.Attribute("date").Value),
+                                                           Comments = Boardgame.Element("comments") != null ? TrimmedStringOrNull(Boardgame.Element("comments").Value) : null
                                                        };
-                return gameCollection;
-
+                var plays = new Plays();
+                plays.Total = int.Parse(xDoc.Root.Attribute("total").Value);
+                plays.Items = gameCollection;
+                return plays;
             }
             catch (Exception ex)
             {
-                return new List<PlayItem>();
+                return new Plays();
             }
         }
 
@@ -154,7 +200,7 @@ namespace BoardGameGeekJsonApi
 
             try
             {
-                Uri teamDataURI = new Uri(string.Format(BASE_URL + "/thing?id={0}&stats=1", GameId));
+                Uri teamDataURI = new Uri(string.Format(BASE_URL2 + "/thing?id={0}&stats=1", GameId));
                 XDocument xDoc = await ReadData(teamDataURI);
 
                 // LINQ to XML.
@@ -195,7 +241,7 @@ namespace BoardGameGeekJsonApi
                 {
                     details.Expansions = null;
                 }
-                
+
                 if (details != null)
                 {
                     _gameCache.Set(Cache.LongThingKey(details.GameId), details, DateTimeOffset.Now.AddSeconds(GameCacheDuration));
@@ -218,7 +264,7 @@ namespace BoardGameGeekJsonApi
         {
             try
             {
-                Uri teamDataURI = new Uri(string.Format(BASE_URL + "/search?query={0}&type=boardgame", query));
+                Uri teamDataURI = new Uri(string.Format(BASE_URL2 + "/search?query={0}&type=boardgame", query));
 
                 XDocument xDoc = await ReadData(teamDataURI);
 
@@ -242,7 +288,7 @@ namespace BoardGameGeekJsonApi
         {
             try
             {
-                Uri teamDataURI = new Uri(string.Format(BASE_URL + "/user?name={0}", username));
+                Uri teamDataURI = new Uri(string.Format(BASE_URL2 + "/user?name={0}", username));
 
                 XDocument xDoc = await ReadData(teamDataURI);
 
@@ -271,7 +317,7 @@ namespace BoardGameGeekJsonApi
                 int page = 1;
                 while ((page - 1) * 100 < totalComments)
                 {
-                    Uri teamDataURI = new Uri(string.Format(BASE_URL + "/thing?id={0}&stats=1&comments=1&page={1}", GameId, page));
+                    Uri teamDataURI = new Uri(string.Format(BASE_URL2 + "/thing?id={0}&stats=1&comments=1&page={1}", GameId, page));
                     XDocument xDoc = await ReadData(teamDataURI);
                     XElement commentsElement = xDoc.Element("items").Element("item").Element("comments");
                     var commentsRes = LoadComments(commentsElement);
@@ -481,6 +527,18 @@ namespace BoardGameGeekJsonApi
                 dt = DateTime.MinValue;
             }
             return dt;
+        }
+
+        private string TrimmedStringOrNull(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+            else
+            {
+                return value.Trim();
+            }
         }
     }
 }

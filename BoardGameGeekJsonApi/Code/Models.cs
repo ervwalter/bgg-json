@@ -5,6 +5,48 @@ using System.Web;
 
 namespace BoardGameGeekJsonApi
 {
+    public class GeekList
+    {
+        public int GeekListId { get; set; }
+        public string Username { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public List<GeekListItem> Items { get; set; }
+    }
+
+    public class GeekListItem
+    {
+        public int GameId { get; set; }
+        public string Name { get; set; }
+        public string Username { get; set; }
+        public int? ImageId { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class Challenge
+    {
+        public int GeekListId { get; set; }
+        public string Username { get; set; }
+        public string Title { get; set; }
+        public List<ChallengeItem> Items { get; set; }
+        public string Start { get; set; }
+        public string End { get; set; }
+        public int GoalPerGame { get; set; }
+        public bool Complete { get; set; }
+    }
+
+    public class ChallengeItem
+    {
+        public string Name { get; set; }
+        public int GameId { get; set; }
+        public List<int> AdditionalGameIds { get; set; }
+        public string Image { get; set; }
+        public string Thumbnail { get; set; }
+        public List<DateTime> Plays { get; set; }
+        public int PlayCount { get; set; }
+        public bool Complete { get; set; }
+    }
+
     public class GameDetails
     {
         public int GameId { get; set; }
@@ -131,6 +173,12 @@ namespace BoardGameGeekJsonApi
         public int GameId { get; set; }
     }
 
+    public class Plays
+    {
+        public int Total { get; set; }
+        public IEnumerable<PlayItem> Items { get; set; }
+    }
+
     public class PlayItem
     {
         public int GameId { get; set; }
@@ -139,6 +187,7 @@ namespace BoardGameGeekJsonApi
         public string Thumbnail { get; set; }
         public DateTime PlayDate { get; set; }
         public int NumPlays { get; set; }
+        public string Comments { get; set; }
     }
 
     public class Comment

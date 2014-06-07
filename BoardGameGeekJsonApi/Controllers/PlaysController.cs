@@ -26,13 +26,13 @@ namespace BoardGameGeekJsonApi.Controllers
 
             var client = new BoardGameGeekClient();
 
-            var plays = await client.LoadLastPlays(username);
-            var gameIds = new HashSet<int>(plays.Select(g => g.GameId));
+            var plays = await client.LoadPlays(username);
+            var gameIds = new HashSet<int>(plays.Items.Select(g => g.GameId));
             var tasks = gameIds.Select(id => client.LoadGame(id, true)).ToList();
             var gameDetails = await Task.WhenAll(tasks);
             var gameDetailsById = gameDetails.ToDictionary(g => g.GameId);
 
-            var response = (from p in plays
+            var response = (from p in plays.Items
                             orderby p.PlayDate descending
                             let g = gameDetailsById[p.GameId]
                             select new PlayItem
@@ -42,7 +42,8 @@ namespace BoardGameGeekJsonApi.Controllers
                                Image = g.Image,
                                Thumbnail = g.Thumbnail,
                                PlayDate = p.PlayDate,
-                               NumPlays = p.NumPlays
+                               NumPlays = p.NumPlays,
+                               Comments = p.Comments
                            }).ToList();
             Cache.Default.Set(Cache.PlaysKey(username), response, DateTimeOffset.Now.AddSeconds(15));
 

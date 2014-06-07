@@ -18,8 +18,9 @@ namespace BoardGameGeekJsonApi.Controllers
         [CacheOutput(ClientTimeSpan = 30)]
         public async Task<List<CollectionItem>> Get(string username, bool grouped = false, bool details = false)
         {
+            var local = Request.IsLocal();
             var cachedResult = Cache.Default.Get(Cache.CollectionKey(username, grouped, details)) as List<CollectionItem>;
-            if (cachedResult != null)
+            if (cachedResult != null && !local)
             {
                 Debug.WriteLine("Served Collection from Cache.");
                 return cachedResult;
@@ -32,9 +33,16 @@ namespace BoardGameGeekJsonApi.Controllers
 
             if (grouped || details)
             {
-                List<int> gameIds = new List<int>();
+                foreach (var game in games)
+                {
+                    if (game.UserComment.Contains("%Expands:"))
+                    {
+                        game.IsExpansion = true;
+                    }
+                }
                 var expansions = from g in gamesById.Values where g.IsExpansion == true orderby g.Name select g; ;
 
+                List<int> gameIds = new List<int>();
                 if (details)
                 {
                     // get details for everything
@@ -69,26 +77,46 @@ namespace BoardGameGeekJsonApi.Controllers
 
                 if (grouped)
                 {
+                    Regex expansionCommentExpression = new Regex(@"%Expands:(.*\w+.*)\[(\d+)\]", RegexOptions.Compiled);
                     foreach (var expansion in expansions)
                     {
                         if (gameDetailsById.ContainsKey(expansion.GameId))
                         {
                             var expansionDetails = gameDetailsById[expansion.GameId];
-                            foreach (var link in expansionDetails.Expands)
+                            if (expansionDetails != null)
                             {
-                                if (gamesById.ContainsKey(link.GameId))
+                                var expandsLinks = new List<BoardGameLink>(expansionDetails.Expands ?? new List<BoardGameLink>());
+                                if (expansion.UserComment.Contains("%Expands:"))
                                 {
-                                    var game = gamesById[link.GameId];
-                                    if (game.IsExpansion)
+                                    var match = expansionCommentExpression.Match(expansion.UserComment);
+                                    if (match.Success)
                                     {
-                                        continue;
+                                        var name = match.Groups[1].Value.Trim();
+                                        var id = int.Parse(match.Groups[2].Value.Trim());
+                                        expandsLinks.Add(new BoardGameLink
+                                        {
+                                            GameId = id,
+                                            Name = name
+                                        });
+                                        expansion.UserComment = expansionCommentExpression.Replace(expansion.UserComment, "").Trim();
                                     }
+                                }
+                                foreach (var link in expandsLinks)
+                                {
+                                    if (gamesById.ContainsKey(link.GameId))
+                                    {
+                                        var game = gamesById[link.GameId];
+                                        if (game.IsExpansion)
+                                        {
+                                            continue;
+                                        }
 
-                                    if (game.Expansions == null)
-                                    {
-                                        game.Expansions = new List<CollectionItem>();
+                                        if (game.Expansions == null)
+                                        {
+                                            game.Expansions = new List<CollectionItem>();
+                                        }
+                                        game.Expansions.Add(expansion.Clone());
                                     }
-                                    game.Expansions.Add(expansion.Clone());
                                 }
                             }
                         }
