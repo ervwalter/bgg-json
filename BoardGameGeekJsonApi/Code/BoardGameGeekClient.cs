@@ -8,11 +8,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Runtime.Caching;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Linq;
@@ -25,6 +28,31 @@ namespace BoardGameGeekJsonApi
         public const string BASE_URL2 = "http://www.boardgamegeek.com/xmlapi2";
         private static MemoryCache _gameCache = MemoryCache.Default;
         private const int GameCacheDuration = 43200; // 12 hours
+
+        public async Task<GameDetails[]> ParallelLoadGames(IEnumerable<int> gameIds)
+        {
+            var tasks = new List<Task<GameDetails>>();
+            var throttler = new SemaphoreSlim(5);
+            foreach (var gameId in gameIds)
+            {
+                await throttler.WaitAsync();
+                tasks.Add(Task<GameDetails>.Run(async () =>
+                {
+                    try
+                    {
+                        Debug.WriteLine("Loading {0}...", gameId);
+                        return await this.LoadGame(gameId, true);
+                    }
+                    finally
+                    {
+                        Debug.WriteLine("Done with {0}...", gameId);
+                        throttler.Release();
+                    }
+                }));
+
+            }
+            return await Task.WhenAll(tasks);
+        }
 
         public async Task<IEnumerable<CollectionItem>> LoadCollection(string username)
         {
@@ -80,8 +108,9 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                //ExceptionHandler(ex);
-                return new List<CollectionItem>();
+                throw;
+                ////ExceptionHandler(ex);
+                //return new List<CollectionItem>();
             }
         }
 
@@ -108,8 +137,9 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                //ExceptionHandler(ex);
-                return new List<HotGame>();
+                throw;
+                ////ExceptionHandler(ex);
+                //return new List<HotGame>();
             }
         }
 
@@ -125,14 +155,14 @@ namespace BoardGameGeekJsonApi
                 {
                     GeekListId = id,
                     Username = gl.Element("username").Value,
-                    Title=gl.Element("title").Value,
+                    Title = gl.Element("title").Value,
                     Description = gl.Element("description").Value,
                     Items = (from item in gl.Elements("item")
                              where item.Attribute("objecttype").Value == "thing" && item.Attribute("subtype").Value == "boardgame"
                              select new GeekListItem()
                              {
                                  GameId = int.Parse(item.Attribute("objectid").Value),
-                                 ImageId = item.Attribute("imageid") != null ? int.Parse(item.Attribute("imageid").Value) : (int?) null,
+                                 ImageId = item.Attribute("imageid") != null ? int.Parse(item.Attribute("imageid").Value) : (int?)null,
                                  Username = item.Attribute("username").Value,
                                  Name = item.Attribute("objectname").Value,
                                  Description = item.Element("body").Value,
@@ -142,7 +172,8 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                return new GeekList();
+                throw;
+                //return new GeekList();
             }
         }
 
@@ -179,7 +210,8 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                return new Plays();
+                throw;
+                //return new Plays();
             }
         }
 
@@ -251,7 +283,8 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                return null;
+                throw;
+                //return null;
             }
         }
 
@@ -280,7 +313,8 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                return new List<SearchResult>();
+                throw;
+                //return new List<SearchResult>();
             }
         }
 
@@ -304,7 +338,8 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception ex)
             {
-                return new User();
+                throw;
+                //return new User();
             }
         }
 
@@ -328,7 +363,8 @@ namespace BoardGameGeekJsonApi
             }
             catch (Exception)
             {
-                return new List<Comment>();
+                throw;
+                //return new List<Comment>();
             }
         }
 
@@ -510,13 +546,47 @@ namespace BoardGameGeekJsonApi
             Debug.WriteLine("Downloading " + requestUrl.ToString());
             // Due to malformed header I cannot use GetContentAsync and ReadAsStringAsync :(
             // UTF-8 is now hard-coded...
-            using (var client = new HttpClient())
-            {
-                var responseBytes = await client.GetByteArrayAsync(requestUrl);
-                var xmlResponse = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
 
-                return XDocument.Parse(xmlResponse);
+            XDocument data = null;
+            int retries = 0;
+            while (data == null && retries < 60)
+            {
+                retries++;
+                var request = WebRequest.CreateHttp(requestUrl);
+                request.Timeout = 15000;
+                using (var response = (HttpWebResponse)(await request.GetResponseAsync()))
+                {
+                    if (response.StatusCode == HttpStatusCode.Accepted)
+                    {
+                        await Task.Delay(500);
+                        continue;
+                    }
+                    using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
+                    {
+                        data = XDocument.Parse(await reader.ReadToEndAsync());
+                    }
+                }
             }
+
+            if (data != null)
+            {
+                return data;
+            }
+            else
+            {
+                throw new Exception("Failed to download BGG data.");
+            }
+
+
+
+            //using (var client = new HttpClient())
+            //{
+            //    var responseBytes = await client.GetByteArrayAsync(requestUrl);
+            //    client.las
+            //    var xmlResponse = Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
+
+            //    return XDocument.Parse(xmlResponse);
+            //}
         }
 
         private DateTime safeParseDateTime(string date)

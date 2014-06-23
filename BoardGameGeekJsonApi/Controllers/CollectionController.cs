@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.Caching;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using WebApi.OutputCache.V2;
@@ -54,8 +55,7 @@ namespace BoardGameGeekJsonApi.Controllers
                     gameIds = expansions.Select(g => g.GameId).ToList();
                 }
 
-                var tasks = gameIds.Select(id => client.LoadGame(id, true)).ToList();
-                var gameDetailsList = await Task.WhenAll(tasks);
+                var gameDetailsList = await client.ParallelLoadGames(gameIds);
                 var gameDetailsById = gameDetailsList.Where(g => g != null).ToDictionary(g => g.GameId);
 
                 if (details)
@@ -136,5 +136,6 @@ namespace BoardGameGeekJsonApi.Controllers
 
             return result;
         }
+
     }
 }

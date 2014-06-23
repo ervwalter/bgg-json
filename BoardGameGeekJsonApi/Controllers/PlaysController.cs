@@ -28,8 +28,7 @@ namespace BoardGameGeekJsonApi.Controllers
 
             var plays = await client.LoadPlays(username);
             var gameIds = new HashSet<int>(plays.Items.Select(g => g.GameId));
-            var tasks = gameIds.Select(id => client.LoadGame(id, true)).ToList();
-            var gameDetails = await Task.WhenAll(tasks);
+            var gameDetails = await client.ParallelLoadGames(gameIds);
             var gameDetailsById = gameDetails.ToDictionary(g => g.GameId);
 
             var response = (from p in plays.Items
