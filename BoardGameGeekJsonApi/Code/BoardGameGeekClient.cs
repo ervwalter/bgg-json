@@ -31,27 +31,31 @@ namespace BoardGameGeekJsonApi
 
         public async Task<GameDetails[]> ParallelLoadGames(IEnumerable<int> gameIds)
         {
+            GameDetails[] results;
             var tasks = new List<Task<GameDetails>>();
-            var throttler = new SemaphoreSlim(5);
-            foreach (var gameId in gameIds)
+            using (var throttler = new SemaphoreSlim(5))
             {
-                await throttler.WaitAsync();
-                tasks.Add(Task<GameDetails>.Run(async () =>
+                foreach (var gameId in gameIds)
                 {
-                    try
+                    await throttler.WaitAsync();
+                    tasks.Add(Task<GameDetails>.Run(async () =>
                     {
-                        Debug.WriteLine("Loading {0}...", gameId);
-                        return await this.LoadGame(gameId, true);
-                    }
-                    finally
-                    {
-                        Debug.WriteLine("Done with {0}...", gameId);
-                        throttler.Release();
-                    }
-                }));
+                        try
+                        {
+                            Debug.WriteLine("Loading {0}...", gameId);
+                            return await this.LoadGame(gameId, true);
+                        }
+                        finally
+                        {
+                            Debug.WriteLine("Done with {0}...", gameId);
+                            throttler.Release();
+                        }
+                    }));
 
+                }
+                results = await Task.WhenAll(tasks);
             }
-            return await Task.WhenAll(tasks);
+            return results;
         }
 
         public async Task<IEnumerable<CollectionItem>> LoadCollection(string username)
