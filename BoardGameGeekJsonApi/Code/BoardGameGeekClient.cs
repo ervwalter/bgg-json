@@ -347,7 +347,6 @@ namespace BoardGameGeekJsonApi
         {
             try
             {
-
                 List<Comment> comments = new List<Comment>();
                 int page = 1;
                 while ((page - 1) * 100 < totalComments)
