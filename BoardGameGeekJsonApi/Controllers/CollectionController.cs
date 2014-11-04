@@ -29,8 +29,14 @@ namespace BoardGameGeekJsonApi.Controllers
 
             var client = new BoardGameGeekClient();
 
-            var gamesById = (await client.LoadCollection(username)).ToDictionary(g => g.GameId);
-            var games = from g in gamesById.Values select g;
+            var games = await client.LoadCollection(username);
+            var gamesById = games.ToLookup(g => g.GameId);
+            foreach (var gm in gamesById) {
+                if (gm.Count() > 1)
+                {
+                    Debug.WriteLine(gm.Key);
+                }
+            }
 
             if (grouped || details)
             {
@@ -41,7 +47,7 @@ namespace BoardGameGeekJsonApi.Controllers
                         game.IsExpansion = true;
                     }
                 }
-                var expansions = from g in gamesById.Values where g.IsExpansion == true orderby g.Name select g; ;
+                var expansions = from g in games where g.IsExpansion == true orderby g.Name select g; ;
 
                 List<int> gameIds = new List<int>();
                 if (details)
@@ -103,9 +109,9 @@ namespace BoardGameGeekJsonApi.Controllers
                                 }
                                 foreach (var link in expandsLinks)
                                 {
-                                    if (gamesById.ContainsKey(link.GameId))
+                                    var specificGames = gamesById[link.GameId];
+                                    foreach (var game in specificGames)
                                     {
-                                        var game = gamesById[link.GameId];
                                         if (game.IsExpansion)
                                         {
                                             continue;
