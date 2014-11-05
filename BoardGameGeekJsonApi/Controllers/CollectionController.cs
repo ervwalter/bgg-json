@@ -29,14 +29,8 @@ namespace BoardGameGeekJsonApi.Controllers
 
             var client = new BoardGameGeekClient();
 
-            var games = await client.LoadCollection(username);
+            IEnumerable<CollectionItem> games = (await client.LoadCollection(username)).ToList();
             var gamesById = games.ToLookup(g => g.GameId);
-            foreach (var gm in gamesById) {
-                if (gm.Count() > 1)
-                {
-                    Debug.WriteLine(gm.Key);
-                }
-            }
 
             if (grouped || details)
             {
@@ -49,16 +43,16 @@ namespace BoardGameGeekJsonApi.Controllers
                 }
                 var expansions = from g in games where g.IsExpansion == true orderby g.Name select g; ;
 
-                List<int> gameIds = new List<int>();
+                HashSet<int> gameIds = new HashSet<int>();
                 if (details)
                 {
                     // get details for everything
-                    gameIds = games.Select(g => g.GameId).ToList();
+                    gameIds.UnionWith(games.Select(g => g.GameId));
                 }
                 else if (grouped)
                 {
                     // get details only for expansions
-                    gameIds = expansions.Select(g => g.GameId).ToList();
+                    gameIds.UnionWith(expansions.Select(g => g.GameId));
                 }
 
                 var gameDetailsList = await client.ParallelLoadGames(gameIds);
