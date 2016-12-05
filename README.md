@@ -1,9 +1,13 @@
 bgg-json
 ========
 
-This is a wrapper for the [BoardGameGeek JSON API](http://boardgamegeek.com/wiki/page/BGG_XML_API2).  It is developed in C# and uses the ASP.NET Web API to reexpose selected BGG API endpoints as JSON endpoints.
+This is a sample wrapper for the [BoardGameGeek JSON API](http://boardgamegeek.com/wiki/page/BGG_XML_API2).  It is developed in C# and uses the ASP.NET Web API to reexpose selected BGG API endpoints as JSON endpoints.
 
-This code is running live at [bgg-json.azurewebsites.net](http://bgg-json.azurewebsites.net/). See this forum post for more information and for any questions: <http://boardgamegeek.com/thread/1109812/jsonjsonp-wrapper>.
+Note, this code is not intended to be comprehensive and lacks things that a production solution would need (e.g. throttling and caching).
+
+This sample code is running live at [bgg-json.azurewebsites.net](http://bgg-json.azurewebsites.net/). You are welcome to use that server if you like for some test code, but be aware that it is hosted on the free tier of Azure and has extremely low quotas for how much CPU and RAM it can use before Azure temporarily shuts it down for an hour.  So it's not viable for you to use it for production purposes unless you don't care about reliability.
+
+See this forum post for more information and for any questions: <http://boardgamegeek.com/thread/1109812/jsonjsonp-wrapper>.
 
 License
 ========
