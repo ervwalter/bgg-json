@@ -44,9 +44,10 @@
     <div class="container body-content">
         <h1>BoardGameGeek JSON APIs</h1>
 
+        <p>This is not production quality code, and it is not running on a production quality server. This is simply sample code. This code is not intended to be comprehensive and lacks things that a production solution would need (e.g. throttling and caching). See <a href="https://boardgamegeek.com/thread/1109812/jsonjsonp-wrapper">this BGG post</a> for more details.
         <p>This server wraps some of the APIs from <a href="http://boardgamegeek.com/">BoardGameGeek</a> as JSON endpoints.  All endpoints support simple HTTP request, <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>, and <a href="http://en.wikipedia.org/wiki/JSONP">JSONP</a>. To make a JSONP request, include a <code>callback</code> parameter in the querystring of your request.</p>
         <p><b>Use of these APIs is subject to the BoardGameGeek API <a href="http://boardgamegeek.com/xmlapi/termsofuse">terms of use</a>.</b></p>
-        <p>In addition, this server will only remain available as long as it is not abused. So don't hammer it with requests I will have to take it down. If you have some high volume use case, <a href="mailto:erv@ewal.net">email me</a> and I'll share the source code for this site with you so that you can host it yourself.</p>
+        <p>As mentioned above, this is not running on a production quality server.  If it gets too many requests in a short period of time, it will temporarily shut down.  If you have some high volume use case, please set up your own server.  You can find the source code <a href="https://github.com/ervwalter/bgg-json">here</a>.</p>
 
         <h2>Game Collections</h2>
         <p><b><i>URL Format:</i></b> <code>@(baseUrl)collection/<b>{username}</b>?grouped=<b>true</b>|<b>false</b></code></p>
