@@ -24,8 +24,8 @@ namespace BoardGameGeekJsonApi
 {
     public class BoardGameGeekClient
     {
-        public const string BASE_URL1 = "http://www.boardgamegeek.com/xmlapi";
-        public const string BASE_URL2 = "http://www.boardgamegeek.com/xmlapi2";
+        public const string BASE_URL1 = "https://www.boardgamegeek.com/xmlapi";
+        public const string BASE_URL2 = "https://www.boardgamegeek.com/xmlapi2";
         private static MemoryCache _gameCache = MemoryCache.Default;
         private const int GameCacheDuration = 43200; // 12 hours
 
