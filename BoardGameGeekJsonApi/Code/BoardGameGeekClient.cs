@@ -29,6 +29,11 @@ namespace BoardGameGeekJsonApi
         private static MemoryCache _gameCache = MemoryCache.Default;
         private const int GameCacheDuration = 43200; // 12 hours
 
+        static BoardGameGeekClient()
+        {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        }
+
         public async Task<GameDetails[]> ParallelLoadGames(IEnumerable<int> gameIds)
         {
             GameDetails[] results;
